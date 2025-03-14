@@ -122,7 +122,7 @@ python ShellcodeEncrypt2Dll.py --standalone shellcode.raw
             print(result.stdout)
             
     except FileNotFoundError:
-        print("[-] x86_64-w64-mingw32-gcc didn't work out properly or wasn't found.\nTry: \"sudo apt install mingw-w64\"")
+        print("[-] x86_64-w64-mingw32-g++ didn't work out properly or wasn't found.\nTry: \"sudo apt install mingw-w64\"")
         sys.exit(1)
 
 

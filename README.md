@@ -8,7 +8,10 @@ Two modes:
 - non-standalone: To make an encrypted DLL **WITHOUT** KEY stored in the DLL.You can use it for sideload/rundll32 but you need to pass the key. (So even if the sample is captured, the shellcode will be still difficult to recover)
 - standalone: To make an encrypted DLL **WITH** KEY stored in the DLL. You can use it for sideload/hijack or in a printnightmare-like scenario.
 
+
+
 VT: 2/72 (13/3/2025)
+
 VT: 3/72 (14/3/2025)
 
 ![ShellcodeEncrypt2Dll_vs_VT](https://raw.githubusercontent.com/restkhz/blogImages/main/img/屏幕截图_20250313_050702.png)
@@ -24,7 +27,8 @@ Dependencies:
 pip install pycryptodome
 sudo apt install mingw-w64
 ```
-
+I know no one wants to memorize a bunch of arguments.
+Edit your key in the `ShellcodeEncrypt2Dll.py`
 
 Example:
 ```
@@ -62,3 +66,7 @@ The `shellcode` and `function names` like `VirtuallAlloc`, `CreateThread` etc wi
 
 The standalone mode will store the key in the DLL. Decrypt itself when running.
 The non-standalone mode needs your key as a parameter to decrypt itself when running.
+
+## Disclaimer
+
+Submitted to VirusTotal already. Only for educational purposes.
