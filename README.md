@@ -14,7 +14,13 @@ VT: 2/72 (13/3/2025)
 
 VT: 3/72 (14/3/2025)
 
-![ShellcodeEncrypt2Dll_vs_VT](https://raw.githubusercontent.com/restkhz/blogImages/main/img/屏幕截图_20250313_050702.png)
+VT: 3/73 (27/3/2025)
+
+**VT: 0/72 (28/3/2025) (after update)**
+
+![](https://raw.githubusercontent.com/restkhz/blogImages/main/img/屏幕截图_20250328_193321.png)
+
+
 
 ![](https://raw.githubusercontent.com/restkhz/blogImages/main/img/屏幕截图_20250313_060155.png)
 
@@ -27,8 +33,8 @@ Dependencies:
 pip install pycryptodome
 sudo apt install mingw-w64
 ```
-I know no one wants to memorize a bunch of arguments.
-Edit your key in the `ShellcodeEncrypt2Dll.py`
+I know no one wants to memorize a bunch of arguments…
+**Edit your key in the `ShellcodeEncrypt2Dll.py` first** 
 
 Example:
 ```
@@ -39,7 +45,15 @@ or
 python ShellcodeEncrypt2Dll.py --standalone shellcode.raw
 ```
 
-Then you will get a `shell.dll`
+Then you will get a `loader.dll`
+
+For a particular antivirus program, we need to patch the dll to bypass…
+
+```
+python patch.py (optional)
+```
+
+Then you will get a `loader_patched.dll`
 
 For non-standalone:
 ```
@@ -63,6 +77,10 @@ Your can edit your key in the python script.
 
 This script will generate a header file for template.cpp, then try to compile with `x86_64-w64-mingw32-g++`.
 The `shellcode` and `function names` like `VirtuallAlloc`, `CreateThread` etc will be encrypted(AES-CBC) with key.
+
+Hide suspicious strings as much as possible…
+
+Considering entropy…
 
 The standalone mode will store the key in the DLL. Decrypt itself when running.
 The non-standalone mode needs your key as a parameter to decrypt itself when running.
