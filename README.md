@@ -26,7 +26,9 @@ This method is intended for Red Team exercises or advanced pentesting labs (like
 
 **Note on dependencies:**  
 You might need to reference `System.Management.Automation.dll`, for example:
+
     C:\Program Files\WindowsPowerShell\Modules\PowerShellGet\<version>\System.Management.Automation.dll
+    
 Also ensure that your PowerShell execution policy allows scripts to run, or use a bypass method.
 
 ---
