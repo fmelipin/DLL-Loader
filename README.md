@@ -39,9 +39,12 @@ Use Donut to transform your .NET executable (`Loader.exe`) into raw shellcode:
     donut.exe -i Loader.exe -a 2 -f 1 -b 1 -o shellcode.bin
 
 **Explanation of flags**:
-- `-a 2`: Target architecture (x64).
-- `-f 1`: Output format: raw (binary).
-- `-b 1`: AMSI/WLDP/ETW bypass level (0 = none, 1 = always, etc.).
+- `-a 2`: Target architecture (x64)
+- `-f 1`: Output format: raw shellcode
+- `-b 1`: AMSI/WLDP/ETW bypass level  
+    - `1`: **No bypass**  
+  - `2`: Abort on failure  
+  - `3`: Continue on failure
 
 > **Tip:** This Donut command is tested on Windows. You can transfer `shellcode.bin` to a Linux machine for encryption.
 
